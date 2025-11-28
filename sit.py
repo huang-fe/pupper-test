@@ -165,7 +165,7 @@ class InverseKinematics(Node):
         steps = int(duration/dt)
 
         # Current EE positions
-        current = self.forward_kinematics_all(self.joint_positions).reshape(4,3)
+        current = self.forward_kinematics(self.joint_positions).reshape(4,3)
 
         trajectory = []
 
