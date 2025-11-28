@@ -4,52 +4,52 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 import numpy as np
 
-np.set_printoptions(precision=3, suppress=True)
-
-
+# np.set_printoptions(precision=3, suppress=True)
 # -----------------------------
 # Transform helpers
 # -----------------------------
-
 def rotation_x(angle):
-    return np.array([
-        [1, 0, 0, 0],
-        [0, np.cos(angle), -np.sin(angle), 0],
-        [0, np.sin(angle), np.cos(angle), 0],
-        [0, 0, 0, 1],
-    ])
-
+    return np.array(
+        [
+            [1, 0, 0, 0],
+            [0, np.cos(angle), -np.sin(angle), 0],
+            [0, np.sin(angle), np.cos(angle), 0],
+            [0, 0, 0, 1],
+        ]
+    )
 def rotation_y(angle):
-    return np.array([
-        [np.cos(angle), 0, np.sin(angle), 0],
-        [0, 1, 0, 0],
-        [-np.sin(angle), 0, np.cos(angle), 0],
-        [0, 0, 0, 1],
-    ])
-
+    return np.array(
+        [
+            [np.cos(angle), 0, np.sin(angle), 0],
+            [0, 1, 0, 0],
+            [-np.sin(angle), 0, np.cos(angle), 0],
+            [0, 0, 0, 1],
+        ]
+    )
 def rotation_z(angle):
-    return np.array([
-        [np.cos(angle), -np.sin(angle), 0, 0],
-        [np.sin(angle), np.cos(angle), 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1],
-    ])
-
+    return np.array(
+        [
+            [np.cos(angle), -np.sin(angle), 0, 0],
+            [np.sin(angle), np.cos(angle), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ]
+    )
 def translation(x, y, z):
-    return np.array([
-        [1, 0, 0, x],
-        [0, 1, 0, y],
-        [0, 0, 1, z],
-        [0, 0, 0, 1],
-    ])
-
+    return np.array(
+        [
+            [1, 0, 0, x],
+            [0, 1, 0, y],
+            [0, 0, 1, z],
+            [0, 0, 0, 1],
+        ]
+    )
 
 # =============================
 #      INVERSE KINEMATICS
 # =============================
 
 class InverseKinematics(Node):
-
     def __init__(self):
         super().__init__('sit_stand_kinematics')
 
@@ -105,32 +105,39 @@ class InverseKinematics(Node):
     # Forward Kinematics for each leg
     # -----------------------------
     def fr_leg_fk(self, theta):
-        T1 = translation(0.075, -0.0835, 0) @ rotation_x(1.5708) @ rotation_z(theta[0])
-        T2 = rotation_y(-1.5708) @ rotation_z(theta[1])
-        T3 = translation(0, -0.0494, 0.0685) @ rotation_y(1.5708) @ rotation_z(theta[2])
-        T4 = translation(0.06231, -0.06216, 0.018)
-        return (T1 @ T2 @ T3 @ T4)[:3, 3]
+        T_RF_0_1 = translation(0.07500, -0.08350, 0) @ rotation_x(1.57080) @ rotation_z(theta[0])
+        T_RF_1_2 = rotation_y(-1.57080) @ rotation_z(theta[1])
+        T_RF_2_3 = translation(0, -0.04940, 0.06850) @ rotation_y(1.57080) @ rotation_z(theta[2])
+        T_RF_3_ee = translation(0.06231, -0.06216, 0.01800)
+        T_RF_0_ee = T_RF_0_1 @ T_RF_1_2 @ T_RF_2_3 @ T_RF_3_ee
+        return T_RF_0_ee[:3, 3]
 
     def fl_leg_fk(self, theta):
-        T1 = translation(0.075, -0.0445, 0) @ rotation_x(1.5708) @ rotation_z(theta[0])
-        T2 = translation(0,0,0.039) @ rotation_y(-1.5708) @ rotation_z(theta[1])
-        T3 = translation(0, -0.0494, 0.0685) @ rotation_y(1.5708) @ rotation_z(theta[2])
-        T4 = translation(0.06231, -0.06216, 0.018)
-        return (T1 @ T2 @ T3 @ T4)[:3, 3]
+        # T_0_1 (base_link to leg_front_l_1)
+        theta1, theta2, theta3 = theta
+        T_0_1 = translation(0.07500, -0.0445, 0) @ rotation_x(1.57080) @ rotation_z(theta1)
+        T_1_2 = translation(0, 0, 0.039) @ rotation_y(-1.57080) @ rotation_z(theta2)
+        T_2_3 = translation(0, -0.0494, 0.0685) @ rotation_y(1.57080) @ rotation_z(theta3)
+        T_3_ee = translation(0.06231, -0.06216, 0.018) 
+        T_0_ee = T_0_1 @ T_1_2 @ T_2_3 @ T_3_ee
+        return T_0_ee[:3,3]
 
     def br_leg_fk(self, theta):
-        T1 = translation(-0.075, -0.0835, 0) @ rotation_x(1.5708) @ rotation_z(theta[0])
-        T2 = rotation_y(-1.5708) @ rotation_z(theta[1])
-        T3 = translation(0, -0.0494, 0.0685) @ rotation_y(1.5708) @ rotation_z(theta[2])
-        T4 = translation(0.06231, -0.06216, 0.018)
-        return (T1 @ T2 @ T3 @ T4)[:3, 3]
+        T_RF_0_1 = translation(-0.07500, -0.08350, 0) @ rotation_x(1.57080) @ rotation_z(theta[0])
+        T_RF_1_2 = rotation_y(-1.57080) @ rotation_z(theta[1])
+        T_RF_2_3 = translation(0, -0.04940, 0.06850) @ rotation_y(1.57080) @ rotation_z(theta[2])
+        T_RF_3_ee = translation(0.06231, -0.06216, 0.01800)
+        T_RF_0_ee = T_RF_0_1 @ T_RF_1_2 @ T_RF_2_3 @ T_RF_3_ee
+        return T_RF_0_ee[:3, 3]
 
     def bl_leg_fk(self, theta):
-        T1 = translation(-0.075, 0.0445, 0) @ rotation_x(-1.5708) @ rotation_z(theta[0])
-        T2 = translation(0,0,0.039) @ rotation_y(-1.5708) @ rotation_z(theta[1])
-        T3 = translation(0, -0.0494, 0.0685) @ rotation_y(1.5708) @ rotation_z(theta[2])
-        T4 = translation(0.06231, -0.06216, 0.018)
-        return (T1 @ T2 @ T3 @ T4)[:3,3]
+        theta1, theta2, theta3 = theta
+        T_0_1 = translation(-0.07500, 0.0445, 0) @ rotation_x(-1.57080) @ rotation_z(theta1)
+        T_1_2 = translation(0, 0, 0.039) @ rotation_y(-1.57080) @ rotation_z(theta2)
+        T_2_3 = translation(0, -0.0494, 0.0685) @ rotation_y(1.57080) @ rotation_z(theta3)
+        T_3_ee = translation(0.06231, -0.06216, 0.018) 
+        T_0_ee = T_0_1 @ T_1_2 @ T_2_3 @ T_3_ee
+        return T_0_ee[:3,3]
 
     def forward_kinematics(self, theta):
         return np.concatenate([self.fk_functions[i](theta[3*i: 3*i+3]) for i in range(4)])
@@ -166,7 +173,6 @@ class InverseKinematics(Node):
         max_iterations = 20 # TODO: [already done] paste lab 3 inverse kinematics here
         tolerance = 0.0002 # TODO: [already done] paste lab 3 inverse kinematics here
 
-        cost_l = []
         for _ in range(max_iterations):
             grad = gradient(theta)
             if np.sum(np.abs(target_ee-theta)) < tolerance:
