@@ -52,10 +52,10 @@ def main():
         
         # Test 1: Switch to a test animation (if any exist)
         print("\nTest 1: Attempting to switch to an animation...")
-        tester.test_animation_switch("test_animation")
+        tester.test_animation_switch("lie_sit_lie_recording_2025-09-03_12-44-08_0")
         
         print("\nTest 2: Switch to another animation...")
-        tester.test_animation_switch("another_animation")
+        tester.test_animation_switch("push_up_recording_2025-09-04_16-11-34_0")
         
         print("\nTest complete! Check the logs for controller switching messages.")
         print("Expected behavior:")
