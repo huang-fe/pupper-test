@@ -138,24 +138,41 @@ class InverseKinematics(Node):
     # -----------------------------
     # Inverse Kinematics (gradient descent)
     # -----------------------------
-    def inverse_kinematics_single_leg(self, target_ee, leg_index, initial=[0,0,0]):
-        fk = self.fk_functions[leg_index]
 
-        def cost(theta):
-            return np.linalg.norm(fk(theta) - target_ee)**2
+    def inverse_kinematics_single_leg(self, target_ee, leg_index, initial_guess=[0, 0, 0]):
+        leg_forward_kinematics = self.fk_functions[leg_index]
 
-        def grad(theta, eps=1e-3):
-            g = np.zeros(3)
-            for i in range(3):
-                t_plus = theta.copy();  t_plus[i] += eps
-                t_minus = theta.copy(); t_minus[i] -= eps
-                g[i] = (cost(t_plus) - cost(t_minus)) / (2*eps)
-            return g
+        def cost_function(theta):
+            current_position = leg_forward_kinematics(theta)
+            cost = np.linalg.norm(target_ee-current_position)
+            return cost **2
 
-        theta = np.array(initial)
-        lr = 8
-        for _ in range(25):
-            theta -= lr * grad(theta)
+        def gradient(theta, epsilon=1e-3):
+            grad = np.zeros(3)
+            for i in range(len(theta)):
+                theta_plus = theta.copy()
+                theta_minus = theta.copy()
+                theta_plus[i] += epsilon
+                theta_minus[i] -= epsilon
+
+                cost_plus = cost_function(theta_plus)
+                cost_minus = cost_function(theta_minus)
+
+                grad[i] = (cost_plus - cost_minus) / (2 * epsilon)
+            return grad
+
+        theta = np.array(initial_guess)
+        learning_rate = 10 # TODO:[already done] paste lab 3 inverse kinematics here
+        max_iterations = 20 # TODO: [already done] paste lab 3 inverse kinematics here
+        tolerance = 0.0002 # TODO: [already done] paste lab 3 inverse kinematics here
+
+        cost_l = []
+        for _ in range(max_iterations):
+            grad = gradient(theta)
+            if np.sum(np.abs(target_ee-theta)) < tolerance:
+                break
+            theta = theta - learning_rate * grad
+
         return theta
 
     # -----------------------------
